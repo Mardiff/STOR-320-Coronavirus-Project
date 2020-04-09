@@ -1,0 +1,23 @@
+---
+title: "exploratory_analysis"
+output: html_document
+---
+
+```{r, echo=TRUE, cache=TRUE}
+# Summary
+library(readr)
+library(tidyverse)
+data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+data <- pivot_longer(data, 5:82, names_to = "date", values_to = "cases")
+group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(desc(cases))
+
+filter(data, `Country/Region`=="US") %>% ggplot(aes(x = date, y = cases)) + geom_line()
+```
+
+```{r, echo=TRUE}
+# Exploration/cleaning
+```
+
+```{r, echo=TRUE}
+# Preliminary Results
+```
