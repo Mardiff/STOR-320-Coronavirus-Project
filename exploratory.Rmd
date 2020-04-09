@@ -7,41 +7,58 @@ output: html_document
 library(readr)
 library(tidyverse)
 data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+
+patient_data <- read_csv("Kudos to DXY.cn Last update_ 03_13_2020,  8_00 PM (EST) - Line-list.csv")
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #Cleaning
 data <- pivot_longer(data, 5:82, names_to = "date", values_to = "cases")
 data$date <- as.Date(data$date , format = "%m/%d/%y")
+
+
+
+
+colnames(patient_data) <- c("id", "case_in_country", "reporting date", "summary", "location", "country", "gender", "age", "syptom_onset", "if_onset_approximated", "hosp_visit_date", "international_traveler", "domestic_traveler", "exposure_start", "exposure_end", "traveler", "visiting_wuhan","from_wuhan","death","recovered","symptom","source","link")
+
+patient_data <- patient_data[-1,]
+#What happened to them? We don't know.
+patient_data <- patient_data %>% filter(!is.na(patient_data$death) | !is.na(patient_data$recovered))
+
+#unique(patient_data$death)
+patient_data$outcome <- ifelse(patient_data$death == 0 | is.na(patient_data$death) , "recovered", "dead")
+
+patient_data <- select(patient_data, country, gender, age, outcome)
 ```
+
 ## Summary
-All the data is as of April 9th, 2020. 
+The data sources are covid-19 cases by geogrpahical location (as of April 9th, 2020), and individual patient data. 
 
-descriptive information about the data as it relates to project goals
-e.g. 'we were interested in how the recession affected incomes, but the data we have show no change...'
-or 'Our PCA suggests player height was important in separating the best from worst teams, so we expect this to be an important variable in our model.'
+We are interested in making predictions on the outcome of the virus based on individuals, which is what the patient data was used for. We are also interested in predicting how corona spreads over time, and after the quarantine, we thought that perhaps our predictions would level off. 
 
-
-We are interested in predicting how corona spreads over time, and after the quarantine, we thought that perhaps our predictions would level off. However, there seems to be an exponential increase yada yada yada
-
-The data was fairly clean, and only required minimal cleaning. However, there are some ambiguities in terms of State/Province, as some smaller countries only have reports of every case in the country rather than by individual province/state. 
-
-re-evaluation of the goals/questions given in the proposal
-does the dataset still make sense for this?
-
-statement and justification of changes to project scope or data, if any
-
-```{r, echo=TRUE, cache=TRUE}
-# Summary
-#Top 6 countries with the most cases
-group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(desc(cases)) %>% head()
-
-
+```{r}
 #USA Graph
 group_by(data, `Country/Region`) %>% filter(`Country/Region`=="US") %>% ggplot(aes(x = date, y = cases)) +
   geom_line()+
   geom_point() + theme(axis.text.x = element_text(angle = 90))
+```
 
+
+Although the number of cases is going up, it seems to be almost linear, instead of exponential. This begs the question, "is the quarantine really working? And if so, by how much?" 
+
+The confirmed cases data was fairly clean, and only required minimal cleaning. However, there are some ambiguities in terms of State/Province, as some smaller countries only have reports of every case in the country rather than by individual province/state entries as well. The more difficult data to clean was the patient data. 
+
+The patient data is a compilation by medical staff, and so there isn't a set manner by which data is included. Thankfully, some columns such as gender and age are included, which don't require cleaning. However, what we were really interested in, the outcomes of patients, where muddled. In some cases, the death/recovered columns were both empty, amongst other minor issues (1s and 0s at times, dates at others). To remedy this, we created an outcome column, and decided to only keep outcome, gender, age, and country. We felt the other columns were unnecessary and oftentimes incomplete.
+
+Overall, these datasets are very useful in terms of predicting the rate of spread, and examining the impact global shutdowns have had, if any, on the spread of the coronavirus, as well as examining indivdual cases by age, country, and gender (at least in terms of survivability). 
+
+The changes in scope we made out this point were to replace a question with a much more modern one, in face of the governmental response. Instead of comparing the covid-19 outbreak to SARS, we are going to investigate how quarantine has, if at all, changed the rate of infection of the virus.  
+
+And just for fun, here is a table. As of April 9th, here are the countries with the most cumulative covid-19 cases.
+```{r, echo=TRUE, cache=TRUE}
+# Summary
+#Top 6 countries with the most cases
+group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(desc(cases)) %>% head()
 ```
 ## Exploration/cleaning
 ```{r, echo=TRUE}
