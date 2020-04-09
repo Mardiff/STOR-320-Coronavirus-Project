@@ -2,22 +2,57 @@
 title: "exploratory_analysis"
 output: html_document
 ---
-
-```{r, echo=TRUE, cache=TRUE}
-# Summary
+```{r message=FALSE, warning=FALSE}
+#Initial Setup
 library(readr)
 library(tidyverse)
 data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+```
+
+```{r}
+#Cleaning
 data <- pivot_longer(data, 5:82, names_to = "date", values_to = "cases")
-group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(desc(cases))
+data$date <- as.Date(data$date , format = "%m/%d/%y")
+```
+## Summary
+All the data is as of April 9th, 2020. 
 
-filter(data, `Country/Region`=="US") %>% ggplot(aes(x = date, y = cases)) + geom_line()
+descriptive information about the data as it relates to project goals
+e.g. 'we were interested in how the recession affected incomes, but the data we have show no change...'
+or 'Our PCA suggests player height was important in separating the best from worst teams, so we expect this to be an important variable in our model.'
+
+
+We are interested in predicting how corona spreads over time, and after the quarantine, we thought that perhaps our predictions would level off. However, there seems to be an exponential increase yada yada yada
+
+The data was fairly clean, and only required minimal cleaning. However, there are some ambiguities in terms of State/Province, as some smaller countries only have reports of every case in the country rather than by individual province/state. 
+
+re-evaluation of the goals/questions given in the proposal
+does the dataset still make sense for this?
+
+statement and justification of changes to project scope or data, if any
+
+```{r, echo=TRUE, cache=TRUE}
+# Summary
+#Top 6 countries with the most cases
+group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(desc(cases)) %>% head()
+
+
+#USA Graph
+group_by(data, `Country/Region`) %>% filter(`Country/Region`=="US") %>% ggplot(aes(x = date, y = cases)) +
+  geom_line()+
+  geom_point() + theme(axis.text.x = element_text(angle = 90))
+
+```
+## Exploration/cleaning
+```{r, echo=TRUE}
+
+
+
+
+
 ```
 
+## Preliminary Results
 ```{r, echo=TRUE}
-# Exploration/cleaning
-```
 
-```{r, echo=TRUE}
-# Preliminary Results
 ```
