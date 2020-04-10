@@ -1,16 +1,18 @@
 ---
-title: "exploratory_analysis"
+title: "Exploratory Data Analysis and Cleaning Report"
 output: html_document
 ---
+
 ```{r message=FALSE, warning=FALSE}
 #Initial Setup
 library(readr)
 library(tidyverse)
-data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 
+data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 patient_data <- read_csv("Kudos to DXY.cn Last update_ 03_13_2020,  8_00 PM (EST) - Line-list.csv")
 ```
 
+## Cleaning
 ```{r message=FALSE, warning=FALSE}
 #Cleaning
 data <- pivot_longer(data, 5:82, names_to = "date", values_to = "cases")
@@ -39,30 +41,30 @@ We are interested in making predictions on the outcome of the virus based on ind
 ```{r}
 #USA Graph
 group_by(data, `Country/Region`) %>% filter(`Country/Region`=="US") %>% ggplot(aes(x = date, y = cases)) +
-  geom_line()+
+  geom_line() + ggtitle("Cases in the United States over time") + 
   geom_point() + theme(axis.text.x = element_text(angle = 90))
 ```
 
-
-Although the number of cases is going up, it seems to be almost linear, instead of exponential. This begs the question, "is the quarantine really working? And if so, by how much?" 
-
+Although the number of cases is increasing, after April 1 the slope appears to be almost linear, rather than exponential. This begs the question, "Is the quarantine really working? And if so, by how much?" 
 The confirmed cases data was fairly clean, and only required minimal cleaning. However, there are some ambiguities in terms of State/Province, as some smaller countries only have reports of every case in the country rather than by individual province/state entries as well. The more difficult data to clean was the patient data. 
 
-The patient data is a compilation by medical staff, and so there isn't a set manner by which data is included. Thankfully, some columns such as gender and age are included, which don't require cleaning. However, what we were really interested in, the outcomes of patients, where muddled. In some cases, the death/recovered columns were both empty, amongst other minor issues (1s and 0s at times, dates at others). To remedy this, we created an outcome column, and decided to only keep outcome, gender, age, and country. We felt the other columns were unnecessary and oftentimes incomplete.
+The patient data is a compilation by medical staff, and so there isn't a set manner by which data is included. Thankfully, some columns such as gender and age are included, which don't require massive amounts of cleaning. However, what we were really interested in, the outcomes of patients, were extremely muddled and messy. In some cases, the death/recovered columns were both empty, amongst other minor issues (1s and 0s at times, dates at others). To remedy this, we created an outcome column, and decided to only keep outcome, gender, age, and country. We felt the other columns were unnecessary and oftentimes incomplete.
 
 Overall, these datasets are very useful in terms of predicting the rate of spread, and examining the impact global shutdowns have had, if any, on the spread of the coronavirus, as well as examining indivdual cases by age, country, and gender (at least in terms of survivability). 
 
 The changes in scope we made out this point were to replace a question with a much more modern one, in face of the governmental response. Instead of comparing the covid-19 outbreak to SARS, we are going to investigate how quarantine has, if at all, changed the rate of infection of the virus.  
 
-And just for fun, here is a table. As of April 9th, here are the countries with the most cumulative covid-19 cases.
+And just for fun, here is a table. As of April 9th, here are the 6 countries with the most cumulative covid-19 cases.
+
 ```{r, echo=TRUE, cache=TRUE}
 # Summary
 #Top 6 countries with the most cases
 group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(desc(cases)) %>% head()
 ```
+
 ## Exploration/cleaning
 ```{r, echo=TRUE}
-
+head(data)
 
 
 
