@@ -34,7 +34,7 @@ patient_data <- select(patient_data, country, gender, age, outcome)
 ```
 
 ## Summary
-The data sources are covid-19 cases by geogrpahical location (as of April 9th, 2020), and individual patient data. 
+The data sources are COVID-19 cases by geogrpahical location (as of April 9th, 2020), and individual patient data. 
 
 We are interested in making predictions on the outcome of the virus based on individuals, which is what the patient data was used for. We are also interested in predicting how corona spreads over time, and after the quarantine, we thought that perhaps our predictions would level off. 
 
@@ -53,7 +53,7 @@ The patient data is a compilation by medical staff, and so there isn't a set man
 
 Overall, these datasets are very useful in terms of predicting the rate of spread, and examining the impact global shutdowns have had, if any, on the spread of the coronavirus, as well as examining indivdual cases by age, country, and gender (at least in terms of survivability). 
 
-The changes in scope we made out this point were to replace a question with a much more modern one, in face of the governmental response. Instead of comparing the covid-19 outbreak to SARS, we are going to investigate how quarantine has, if at all, changed the rate of infection of the virus.
+The changes in scope we made out this point were to replace a question with a much more modern one, in face of the governmental response. Instead of comparing the COVID-19 outbreak to SARS, we are going to investigate how quarantine has, if at all, changed the rate of infection of the virus.
 
 ## Exploration/ further cleaning
 ```{r, echo=TRUE}
@@ -87,3 +87,5 @@ ggplot(df, aes(x=date, y=cases, color=`Country/Region`)) +
 ```
 
 As we can see, the US has the highest number of ending cases, as well as one of the steepest curves. While almost all other countries displayed in the graph started getting their first batch of cases around March 1, the US has the first batch of cases almost two weeks later. Iran and Turkey have a pretty shallow, gradual increase in comparison to America, as do most European (or former European: the United Kingdom) countries. Originally, I believed that the spread (or speed of spread) would have mostly to do with population density, though this seems to point away from that assumption as America, in general, is much less densely populated than most European countries. It will be interesting to see which factors (both quantitative like population density and qualitative like government response) result in steeper curves or shallower curves.
+
+#### How do different groups fare after testing positive for COVID-19?
