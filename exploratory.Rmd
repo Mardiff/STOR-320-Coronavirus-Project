@@ -39,36 +39,38 @@ The data sources are covid-19 cases by geogrpahical location (as of April 9th, 2
 We are interested in making predictions on the outcome of the virus based on individuals, which is what the patient data was used for. We are also interested in predicting how corona spreads over time, and after the quarantine, we thought that perhaps our predictions would level off. 
 
 ```{r}
-#USA Graph
+#Cases in the US Graph
 group_by(data, `Country/Region`) %>% filter(`Country/Region`=="US") %>% ggplot(aes(x = date, y = cases)) +
   geom_line() + ggtitle("Cases in the United States over time") + 
   geom_point() + theme(axis.text.x = element_text(angle = 90))
 ```
 
-Although the number of cases is increasing, after April 1 the slope appears to be almost linear, rather than exponential. This begs the question, "Is the quarantine really working? And if so, by how much?" 
-The confirmed cases data was fairly clean, and only required minimal cleaning. However, there are some ambiguities in terms of State/Province, as some smaller countries only have reports of every case in the country rather than by individual province/state entries as well. The more difficult data to clean was the patient data. 
+Although the number of cases is increasing, after April 1 the slope appears to be almost linear, rather than exponential. This begs the question, "Is the quarantine really working? And if so, by how much?"
+
+The confirmed cases data from Johns Hopkins CSSE was fairly clean, and only required minimal cleaning. However, there are some ambiguities in terms of State/Province, as some smaller countries only have reports of every case in the country rather than by individual province/state entries as well. Additionally, there was some redundant data (like longitude and latitude), but this was kept in the data set for geographical distinction and potential map visuals down the line. The more difficult data to clean was the patient data. 
 
 The patient data is a compilation by medical staff, and so there isn't a set manner by which data is included. Thankfully, some columns such as gender and age are included, which don't require massive amounts of cleaning. However, what we were really interested in, the outcomes of patients, were extremely muddled and messy. In some cases, the death/recovered columns were both empty, amongst other minor issues (1s and 0s at times, dates at others). To remedy this, we created an outcome column, and decided to only keep outcome, gender, age, and country. We felt the other columns were unnecessary and oftentimes incomplete.
 
 Overall, these datasets are very useful in terms of predicting the rate of spread, and examining the impact global shutdowns have had, if any, on the spread of the coronavirus, as well as examining indivdual cases by age, country, and gender (at least in terms of survivability). 
 
-The changes in scope we made out this point were to replace a question with a much more modern one, in face of the governmental response. Instead of comparing the covid-19 outbreak to SARS, we are going to investigate how quarantine has, if at all, changed the rate of infection of the virus.  
+The changes in scope we made out this point were to replace a question with a much more modern one, in face of the governmental response. Instead of comparing the covid-19 outbreak to SARS, we are going to investigate how quarantine has, if at all, changed the rate of infection of the virus.
 
-And just for fun, here is a table. As of April 9th, here are the 6 countries with the most cumulative covid-19 cases.
-
-```{r, echo=TRUE, cache=TRUE}
-# Summary
-#Top 6 countries with the most cases
-group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(desc(cases)) %>% head()
-```
-
-## Exploration/cleaning
+## Exploration/ further cleaning
 ```{r, echo=TRUE}
-head(data)
+#Group by country, summarize cases
+overall_sum <- group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(-cases)
+overall_sum
+```
+Above, we see that the dataset contains data from 184 different countries who have reported anywhere from ~5,000,000 cumulative overall day-to-day cases to just 6. The sum of overall cases isn't the most meaningful to us at this point as we don't believe the dataset "removes" cases when an individual recovers. In order to confirm this, we'll take a look at South Korea, which had a noticeable decline in active cases recently. 
 
-
-
-
+```{r, echo=TRUE}
+data[data$`Country/Region` == 'Korea, South',] %>% ggplot(aes(x = date, y = cases)) + geom_line() + ggtitle("Cases in the South Korea over time") + 
+  geom_point() + theme(axis.text.x = element_text(angle = 90)) 
+```
+Given the above, we can safely say that the dataset is already cumulative so any further sums of case numbers would be silly. Thus, a more accurate depiction of the first exploratory graph would look like the following:
+```{r, echo=TRUE}
+recent_sum <- data[data$date == '2020-04-08',] %>% group_by(`Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(-cases)
+recent_sum
 ```
 
 ## Preliminary Results
