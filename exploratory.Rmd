@@ -61,13 +61,15 @@ The changes in scope we made out this point were to replace a question with a mu
 overall_sum <- group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(-cases)
 overall_sum
 ```
-Above, we see that the dataset contains data from 184 different countries who have reported anywhere from ~5,000,000 cumulative overall day-to-day cases to just 6. The sum of overall cases isn't the most meaningful to us at this point as we don't believe the dataset "removes" cases when an individual recovers. In order to confirm this, we'll take a look at South Korea, which had a noticeable decline in active cases recently. 
+
+Above, we see that the dataset contains data from 184 different countries who have reported anywhere from ~5,000,000 cumulative overall day-to-day cases to just 6. The sum of overall cases isn't at all meaningful to us at this point as we don't believe the dataset "removes" cases when an individual recovers and the number of cases already seems to be dealt with cumulatively. In order to confirm this, we'll take a look at South Korea, which had a noticeable decline in active cases recently. 
 
 ```{r, echo=TRUE}
-data[data$`Country/Region` == 'Korea, South',] %>% ggplot(aes(x = date, y = cases)) + geom_line() + ggtitle("Cases in the South Korea over time") + 
+data[data$`Country/Region` == 'Korea, South',] %>% ggplot(aes(x = date, y = cases)) + geom_line() + ggtitle("Cases in South Korea over time") + 
   geom_point() + theme(axis.text.x = element_text(angle = 90)) 
 ```
-Given the above, we can safely say that the dataset is already cumulative so any further sums of case numbers would be silly. Thus, a more accurate depiction of the first exploratory graph would look like the following:
+
+Given the above, we can safely say that the dataset is already cumulative so any further sums of case numbers would be silly. Thus, a more accurate depiction of the first exploratory table would look like the following:
 ```{r, echo=TRUE}
 recent_sum <- data[data$date == '2020-04-08',] %>% group_by(`Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(-cases)
 recent_sum
