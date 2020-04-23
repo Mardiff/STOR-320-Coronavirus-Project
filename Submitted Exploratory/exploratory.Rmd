@@ -1,0 +1,173 @@
+---
+title: "Exploratory Data Analysis and Cleaning Report"
+output: html_document
+---
+
+```{r message=FALSE, warning=FALSE}
+#Initial Setup
+library(readr)
+library(tidyverse)
+data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+patient_data <- read_csv("Kudos to DXY.cn Last update_ 03_13_2020,  8_00 PM (EST) - Line-list.csv")
+```
+
+## Cleaning
+```{r message=FALSE, warning=FALSE}
+#Cleaning
+data <- pivot_longer(data, 5:82, names_to = "date", values_to = "cases")
+data$date <- as.Date(data$date , format = "%m/%d/%y")
+colnames(patient_data) <- c("id", "case_in_country", "reporting date", "summary", "location", "country", "gender", "age", "syptom_onset", "if_onset_approximated", "hosp_visit_date", "international_traveler", "domestic_traveler", "exposure_start", "exposure_end", "traveler", "visiting_wuhan","from_wuhan","death","recovered","symptom","source","link")
+patient_data <- patient_data[-1,]
+#What happened to them? We don't know.
+patient_data <- patient_data %>% filter(!is.na(patient_data$death) | !is.na(patient_data$recovered))
+#unique(patient_data$death)
+patient_data$outcome <- ifelse(patient_data$death == 0 | is.na(patient_data$death) , "recovered", "dead")
+patient_data <- select(patient_data, country, gender, age, outcome)
+```
+
+## Summary
+The data sources are COVID-19 cases by geogrpahical location (as of April 9th, 2020), and individual patient data. 
+
+We are interested in making predictions on the outcome of the virus based on individuals, which is what the patient data was used for. We are also interested in predicting how corona spreads over time, and after the quarantine, we thought that perhaps our predictions would level off. 
+
+```{r}
+#Cases in the US Graph
+group_by(data, `Country/Region`) %>% filter(`Country/Region`=="US") %>% ggplot(aes(x = date, y = cases)) +
+  geom_line() + ggtitle("Cases in the United States over time") + 
+  geom_point() + theme(axis.text.x = element_text(angle = 90))
+```
+
+Although the number of cases is increasing, after April 1 the slope appears to be almost linear, rather than exponential. This begs the question, "Is the quarantine really working? And if so, by how much?"
+
+The confirmed cases data from Johns Hopkins CSSE was fairly clean, and only required minimal cleaning. However, there are some ambiguities in terms of State/Province, as some smaller countries only have reports of every case in the country rather than by individual province/state entries as well. Additionally, there was some redundant data (like longitude and latitude), but this was kept in the data set for geographical distinction and potential map visuals down the line. The more difficult data to clean was the patient data. 
+
+The patient data is a compilation by medical staff, and so there isn't a set manner by which data is included. Thankfully, some columns such as gender and age are included, which don't require massive amounts of cleaning. However, what we were really interested in, the outcomes of patients, were extremely muddled and messy. In some cases, the death/recovered columns were both empty, amongst other minor issues (1s and 0s at times, dates at others). To remedy this, we created an outcome column, and decided to only keep outcome, gender, age, and country. We felt the other columns were unnecessary and oftentimes incomplete.
+
+Overall, these datasets are very useful in terms of predicting the rate of spread, and examining the impact global shutdowns have had, if any, on the spread of the coronavirus, as well as examining indivdual cases by age, country, and gender (at least in terms of survivability). 
+
+The changes in scope we made out this point were to replace a question with a much more modern one, in face of the governmental response. Instead of comparing the COVID-19 outbreak to SARS, we are going to investigate how quarantine has, if at all, changed the rate of infection of the virus.
+
+## Exploration/ further cleaning
+```{r, echo=TRUE}
+#Group by country, summarize cases
+overall_sum <- group_by(data, `Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(-cases)
+overall_sum
+```
+
+Above, we see that the dataset contains data from 184 different countries who have reported anywhere from ~5,000,000 cumulative overall day-to-day cases to just 6. The sum of overall cases isn't at all meaningful to us at this point as we don't believe the dataset "removes" cases when an individual recovers and the number of cases already seems to be dealt with cumulatively. In order to confirm this, we'll take a look at South Korea, which had a noticeable decline in active cases recently. 
+
+```{r, echo=TRUE}
+data[data$`Country/Region` == 'Korea, South',] %>% ggplot(aes(x = date, y = cases)) + geom_line() + ggtitle("Cases in South Korea over time") + 
+  geom_point() + theme(axis.text.x = element_text(angle = 90)) 
+```
+
+Given the above, we can safely say that the dataset is already cumulative so any further sums of case numbers would be silly. Thus, a more accurate depiction of the first exploratory table would look like the following:
+```{r, echo=TRUE}
+recent_sum <- data[data$date == '2020-04-08',] %>% group_by(`Country/Region`) %>% summarize(cases = sum(cases)) %>% arrange(-cases)
+recent_sum
+```
+
+## Preliminary Results
+
+#### How fast is the virus spreading by geographic region?
+```{r, echo=TRUE}
+df <- filter(data, `Country/Region` == "US" | `Country/Region` == "Spain" | `Country/Region` == "Italy" | `Country/Region` == "France" | `Country/Region` == "Germany" | `Country/Region` == "Iran" | `Country/Region` == "United Kingdom" | `Country/Region` == "Turkey" | `Country/Region` == "Belgium")
+df <- filter(df, is.na(`Province/State`))
+ggplot(df, aes(x=date, y=cases, color=`Country/Region`)) +
+  geom_line() + ggtitle("Cases over time by Country")
+```
+
+As we can see, the US has the highest number of ending cases, as well as one of the steepest curves. While almost all other countries displayed in the graph started getting their first batch of cases around March 1, the US has the first batch of cases almost two weeks later. Iran and Turkey have a pretty shallow, gradual increase in comparison to America, as do most European (or former European: the United Kingdom) countries. Originally, I believed that the spread (or speed of spread) would have mostly to do with population density, though this seems to point away from that assumption as America, in general, is much less densely populated than most European countries. It will be interesting to see which factors (both quantitative like population density and qualitative like government response) result in steeper curves or shallower curves.
+
+#### How do different groups fare after testing positive for COVID-19?
+```{r, echo=TRUE}
+gender <- filter(patient_data, !is.na(gender)) %>%
+  select(gender, outcome)
+male <- gender[gender$gender == "male",] %>% group_by(outcome) %>%
+  summarise(cases = n())
+female <- gender[gender$gender == "female",] %>% group_by(outcome) %>%
+  summarise(cases = n())
+mpie <- ggplot(male, aes(x="",y=cases,fill=outcome)) + geom_bar(stat ="identity", width=1) + ggtitle("Male deaths and recoveries") + coord_polar("y", start=0)
+fpie <- ggplot(female, aes(x="",y=cases,fill=outcome)) + geom_bar(stat ="identity", width=1) + ggtitle("Female deaths and recoveries") + coord_polar("y", start=0)
+mpie
+fpie
+```
+
+From the above we can see that presumably more men than women show symptoms after contracting COVID-19 as the number of male cases is higher than the number of female cases. Also noticeable from the pie charts above is the proportion of men killed by the virus is higher than that of women.
+
+```{r, echo=TRUE}
+age <- filter(patient_data, !is.na(age)) %>% select(age, outcome) %>% group_by(outcome) %>% ggplot(aes(x=age,fill=outcome)) + geom_bar(stat="count") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(breaks=c(10,20,30,40,50,60,70,80,90,110)) + ggtitle("Deaths and recoveries by age")
+age
+```
+
+From the above graph we can see that positive cases pick up in the population at age 20 and increase to about the 60s, before tapering off. This is rather surprising to me, as we hear that the elderly are much more likely to contract and face the harsher symptoms of COVID-19. However, this data set is sourced from healthcare professional's observations which could explain this phenomena. Because multiple countries healthcare systems were overwhelmed and overrun by the number of cases, healthcare professionals were forced to triage victims of the disease by age and likeliness of survival. This could explain why there are fewer than expected elderly cases; they sadly never were seen by anyone to document their case in this dataset. Despite the decrease in cases after 60 years old, we do unfortunately see far more cases that result in death.
+
+
+
+
+
+
+```{r, echo=TRUE}
+#1  "Is the quarantine really working? And if so, by how much?"
+d2 = read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
+
+d2 = select(d2, -c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Lat", "Long_", "Combined_Key", "Country_Region"))
+
+d2 <- pivot_longer(d2, 2:80, names_to = "date", values_to = "cases") %>% group_by(Province_State, date) %>% summarize(cases = sum(cases)) %>% filter(Province_State != "American Samoa" && Province_State != "Diamond Princess"  && Province_State != "Grand Princess"  && Province_State != "Guam" && Province_State != "Northern Mariana Islands" && Province_State != "Puerto Rico" && Province_State != "Virgin Islands")
+
+d2 = filter(d2, Province_State == "South Carolina" | Province_State == "North Carolina")
+
+d2$date <- as.Date(d2$date , format = "%m/%d/%y")
+ggplot(d2, aes(x = date, y = cases, color = Province_State)) + geom_line() + ggtitle("Growth in North Carolina and South Carolina") + geom_point() + theme(axis.text.x = element_text(angle = 90))
+
+```
+North Carolina enacted a stay at home policy a week before South Carolina (March 30th vs April 7th), and because of their proximity and similarity it seemed like a good case to dive into. However, from what it looks like here, there really isn't a significant difference between the overall numbers or the perceived growth in the two regions. Perhaps it's too early to really get a significant difference from the quarantine. However, there really aren't many good test cases to compare here since most states that one would consider "similar" enacted quarantines at around the same time. I suspect that when the final presentation is due, much more obvious trends will be available using the same methods of comparison and perhaps a bit of ingenuity. For example, Tennessee and Kentucky are other states I'd consider "similar", and they enacted stay at home policies at different times, spurring news articles, but there similarly aren't any conclusive differences... yet.
+```{r}
+#2 How fast is COVID-19 spreading globally?
+data_bigcountries = filter(data, `Country/Region`=="US" | `Country/Region`=="Spain" | `Country/Region`=="Italy" | `Country/Region`=="Germany" | `Country/Region`=="France" | `Country/Region`=="China" | `Country/Region`=="Iran" | `Country/Region`=="Korea, South")
+
+#unique(data_bigcountries$`Country/Region`)
+
+data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases)) %>% ggplot(aes(x = date, y = cases, color = `Country/Region`)) + geom_line() + ggtitle("Absolute cases across the major countries") + geom_point() + theme(axis.text.x = element_text(angle = 90))
+```
+It's pretty obvious to look at the absolute numbers and conclude that the western countries are the main growth contributors whereas China and South Korea have slowed down incredibly (somewhat unbelievably for China, one might add). When comparing their rates of growth, which I do below for the plateau analysis, it's interesting to see that these countries plateau in growth around 30-50% growth during 1 day, and then make a fairly consistent drop down to a certain number, which for the US lies at around 8% currently and for Italy it's around 3%, while for China it's almost 0.
+```{r}
+#5 Can we predict when the infected and fatality numbers will plateau?
+
+data_bcgrowth = data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases))
+
+data_bcgrowth = data_bcgrowth %>% mutate(Diff_year = 1,  # Difference in time (just in case there are gaps)
+         Diff_growth = cases - lag(cases), # Difference in route between years
+         Rate_percent = (Diff_growth / Diff_year)/cases * 100) 
+
+na.omit(data_bcgrowth) %>% filter(cases > 1000 & (`Country/Region` == "China" | `Country/Region` == "US" | `Country/Region` == "Italy")) %>% ggplot(aes(x = date, y = Rate_percent, color = `Country/Region`)) + geom_line() + ggtitle("Growth in cases across the major countries") + geom_point() + theme(axis.text.x = element_text(angle = 90))
+
+
+```
+
+```{r}
+data_bcgrowth = na.omit(data_bcgrowth)
+data_bcgrowth$datediff = as.numeric(data_bcgrowth$date - data_bcgrowth$date[1])
+
+data_bcgrowth = select(data_bcgrowth, `Country/Region`, cases, Rate_percent, datediff, date)
+#data_bcgrowth$cases2 = data_bcgrowth$cases^2
+data_bcgrowth$Rate_percent2 = data_bcgrowth$Rate_percent^2
+data_bcgrowth$datediff2 = data_bcgrowth$datediff^2
+
+train = head(data_bcgrowth,528)
+test = tail(data_bcgrowth,nrow(data_bcgrowth)-528)
+
+quad_model <- lm(cases ~ ., data = train)
+
+summary(quad_model)
+
+predictedcases <- predict(quad_model,newdata = test)
+```
+```{r}
+
+test$predicted = predictedcases
+
+ggplot(test, aes(date)) + geom_line(aes(y = cases, color = "red")) + geom_line(aes(y = predicted, color = "blue")) + ggtitle("Predicted and actual cases after March 1 in the US") + theme(axis.text.x = element_text(angle = 90))
+
+```
+The rate of growth variable is created for some additional information for the model to peer at. It is a linear combination of other fields but I think in my final analysis I'll pull out the date so the model makes sense. Overall, I think that the model fails to account for how this evolves over time, and how, if I were making a true prediction, it would have to revolve around the daily numbers compounding, which this model doesn't perform a great job at (the predicted values are in red, for what it's worth). However, I used a quadratic model for the simple reason that we're projecting a plateau, and since we would expect these eventual numbers to somewhat resemble a parabola, logically a quadratic model was the best fit.
