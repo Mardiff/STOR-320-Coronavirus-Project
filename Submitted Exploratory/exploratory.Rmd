@@ -109,16 +109,16 @@ From the above graph we can see that positive cases pick up in the population at
 
 ```{r, echo=TRUE}
 #1  "Is the quarantine really working? And if so, by how much?"
-d2 = read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
+us_data = read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 
-d2 = select(d2, -c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Lat", "Long_", "Combined_Key", "Country_Region"))
+us_data = select(us_data, -c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Lat", "Long_", "Combined_Key", "Country_Region"))
 
-d2 <- pivot_longer(d2, 2:80, names_to = "date", values_to = "cases") %>% group_by(Province_State, date) %>% summarize(cases = sum(cases)) %>% filter(Province_State != "American Samoa" && Province_State != "Diamond Princess"  && Province_State != "Grand Princess"  && Province_State != "Guam" && Province_State != "Northern Mariana Islands" && Province_State != "Puerto Rico" && Province_State != "Virgin Islands")
+us_data <- pivot_longer(us_data, 2:80, names_to = "date", values_to = "cases") %>% group_by(Province_State, date) %>% summarize(cases = sum(cases)) %>% filter(Province_State != "American Samoa" && Province_State != "Diamond Princess"  && Province_State != "Grand Princess"  && Province_State != "Guam" && Province_State != "Northern Mariana Islands" && Province_State != "Puerto Rico" && Province_State != "Virgin Islands")
 
-d2 = filter(d2, Province_State == "South Carolina" | Province_State == "North Carolina")
+us_data = filter(us_data, Province_State == "South Carolina" | Province_State == "North Carolina")
 
-d2$date <- as.Date(d2$date , format = "%m/%d/%y")
-ggplot(d2, aes(x = date, y = cases, color = Province_State)) + geom_line() + ggtitle("Growth in North Carolina and South Carolina") + geom_point() + theme(axis.text.x = element_text(angle = 90))
+us_data$date <- as.Date(us_data$date , format = "%m/%d/%y")
+ggplot(us_data, aes(x = date, y = cases, color = Province_State)) + geom_line() + ggtitle("Growth in North Carolina and South Carolina") + geom_point() + theme(axis.text.x = element_text(angle = 90))
 
 ```
 North Carolina enacted a stay at home policy a week before South Carolina (March 30th vs April 7th), and because of their proximity and similarity it seemed like a good case to dive into. However, from what it looks like here, there really isn't a significant difference between the overall numbers or the perceived growth in the two regions. Perhaps it's too early to really get a significant difference from the quarantine. However, there really aren't many good test cases to compare here since most states that one would consider "similar" enacted quarantines at around the same time. I suspect that when the final presentation is due, much more obvious trends will be available using the same methods of comparison and perhaps a bit of ingenuity. For example, Tennessee and Kentucky are other states I'd consider "similar", and they enacted stay at home policies at different times, spurring news articles, but there similarly aren't any conclusive differences... yet.

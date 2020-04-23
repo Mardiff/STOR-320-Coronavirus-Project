@@ -11,13 +11,14 @@ library(tidyverse)
 #Data used:
 data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 patient_data <- read_csv("https://raw.githubusercontent.com/Mardiff/STOR-320-Coronavirus-Project/master/Kudos%20to%20DXY.cn%20Last%20update_%2003_13_2020%2C%20%208_00%20PM%20(EST)%20-%20Line-list.csv")
+us_data = read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 ```
 
 Introduction:
 
 Coronavirus is a pandemic that has recently been the cause of many deaths and illnesses across the globe. The purpose of this project was to explore the different implications COVID-19 has had on the world, and to see if if any trends appear in our data that could possibly model how the virus will act in the future. Our goals were namely to analyze how fast the virus has spread globally and by region, how different groups of people have fared after testing positive, and to investigate the effects of quarantine measures on the rate of infection of the virus, if any exist. 
 
-One of the datasets chosen for this project comes from the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University. It contains a daily updated timeseries table consisting of the global confirmed cases, recovered cases, and deaths by location. The other dataset orignates from DXY.cn, an online community for those working in the healhcare field in China. This dataset contained data pertaining to patient outcomes, such as age and gender. We cleaned the datasets appropriately in order to complete our goals; we used observations from country/region, age, and gender variables and compared them against deaths and recoveries to do this. 
+Two of the datasets chosen for this project come from the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University. They contain daily updated timeseries table consisting of the confirmed cases, recovered cases, and deaths by location, with the first dataset containing global data while the second dataset contains data for the different regions of the United States. The other dataset orignates from DXY.cn, an online community for those working in the healhcare field in China. This dataset contained data pertaining to patient outcomes, such as age and gender. We cleaned the datasets appropriately in order to complete our goals; we used observations from country/region, age, and gender variables and compared them against deaths and recoveries to do this. 
 
 #3rd para: summary + reflections, answer questions/goals
 
@@ -37,6 +38,11 @@ patient_data <- patient_data %>% filter(!is.na(patient_data$death) | !is.na(pati
 patient_data$outcome <- ifelse(patient_data$death == 0 | is.na(patient_data$death) , "recovered", "dead")
 
 patient_data <- select(patient_data, country, gender, age, outcome)
+
+us_data = select(us_data, -c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Lat", "Long_", "Combined_Key", "Country_Region"))
+
+us_data <- pivot_longer(us_data, 2:80, names_to = "date", values_to = "cases") %>% group_by(Province_State, date) %>% summarize(cases = sum(cases)) %>% filter(Province_State != "American Samoa" && Province_State != "Diamond Princess"  && Province_State != "Grand Princess"  && Province_State != "Guam" && Province_State != "Northern Mariana Islands" && Province_State != "Puerto Rico" && Province_State != "Virgin Islands")
+
 ```
 
 The code above was used to clean both of the datasets.
