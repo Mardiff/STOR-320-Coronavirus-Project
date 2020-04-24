@@ -7,6 +7,7 @@ output: html_document
 # Packages used:
 library(readr)
 library(tidyverse)
+library(forecast)
 
 # Data used:
 data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
@@ -27,7 +28,7 @@ Two of the datasets chosen for the project are taken from the Center for Systems
 # Data Description:
 ```{r message=FALSE, warning=FALSE}
 # Cleaning
-data <- pivot_longer(data, 5:82, names_to = "date", values_to = "cases")
+data <- pivot_longer(data, 5:97, names_to = "date", values_to = "cases")
 data$date <- as.Date(data$date , format = "%m/%d/%y")
 
 colnames(patient_data) <- c("id", "case_in_country", "reporting date", "summary", "location", "country", "gender", "age", "syptom_onset", "if_onset_approximated", "hosp_visit_date", "international_traveler", "domestic_traveler", "exposure_start", "exposure_end", "traveler", "visiting_wuhan","from_wuhan","death","recovered","symptom","source","link")
@@ -119,3 +120,28 @@ fpie
 
 From the above graphics we can see that presumably more men than women show symptoms after contracting COVID-19 as the number of male cases is larger than the number of female cases. Which, seems to be supported by studies of hospitalized individuals in the US [The New Coronavirus Appears to Take a Greater Toll on Men Than On Women.](https://www.npr.org/sections/goatsandsoda/2020/04/10/831883664/the-new-coronavirus-appears-to-take-a-greater-toll-on-men-than-on-women)
 Also noticable in the above graphics, is the larger proportion of deaths in males resulting from COVID-19 than in females.
+
+## When will the spread plateau? Will it?
+```{r message=FALSE, warning=FALSE}
+modelData <- filter(select(data, -'Province/State'), `Country/Region`=="US")
+
+modelData <- select(modelData, -`Country/Region`,-Lat, -Long,-date)
+
+set.seed(25)
+myts <- ts(modelData, 
+           start = c(2020, 22), end = c(2020, 114),
+           frequency = 365)
+plot(myts)
+
+arima_model <- auto.arima(myts)
+summary(arima_model)
+
+fore_arima = forecast::forecast(arima_model, h=92)
+fore_arima
+```
+
+As per professor Brown's suggestion, we decided to use a time series regression model to forecast the number of cases in the US. We wanted to find out when/if the spread would plateau, and in order to answer the question, we decided to forecast the next 92 days of the cases in the US, using the ARIMA modeling method. Unfortunately, what we see is an increase in cases rather than any decrease whatsoever, based on current trends. Our model forecasts that in 92 days, there will be over 3.5 million infected. 
+
+In order to confirm our findings, we decided to search the internet. We found [this](https://www.weforum.org/agenda/2020/04/how-and-when-will-this-pandemic-end-we-asked-a-virologist/) article, written on April 06, which describes how the number of cases may increase until a point of saturation is reached. This article is consistent with our findings, since the 'point of saturation' described in the article is somewhere between 40-50% of the population. Other sources, however, such as [this one by the New York Times](https://www.nytimes.com/interactive/2020/04/22/upshot/coronavirus-models.html), forecast a decrease in the number of deaths (and therefore cases) of the coronavirus within the next 30 days. 
+
+
