@@ -20,6 +20,19 @@ The Coronavirus pandemic began in late 2019 in China and quickly escalated in re
 
 Two of the datasets chosen for the project are taken from the Center for Systems Science and Engineering (CSSE) at Johns Hopskins University. They contain daily updated timeseries table consisting of the confirmed cases, recovered cases, and deaths by location, with the first dataset containing global data while the second dataset contains data for the different regions of the United States. The remaining dataset of the three orignates from DXY.cn, an online community for those working in the healhcare field in China. This dataset contained data pertaining to patient outcomes, such as age and gender. We cleaned the datasets appropriately in order to complete our goals; we used observations from country/region, age, and gender variables and compared them against deaths and recoveries to do this. 
 
+## Summary of responses
+#### How do different groups fare after testing positive for COVID-19?
+Our research has shown that males are more likely to be effected by the disease, and their chances of recovery are lesser than their female counterparts. Additionally, our exploration has shown that while there are more cases of middle-aged individuals contracting COVID-19, their chances of recovery are much higher than individuals who are older than approximately 65.
+
+#### When will the spread plateau?
+When trying to find out if the pandemic was on the verge of plateau, we decided to forecast the next ninety-two days of cases in the United States. What we found was that the number of cases is predicted to increase to 3.5 million during that time. At least in the short term, Covid-19 is here to stay (in the United States). 
+
+#### How effective is the quarantine?
+In terms of the effectiveness of the quarantine, it's difficult to measure without a control group, which isn't possible in such a high-stakes scenario. While the date of the quarantine by state doesn't appear to have an obvious effect on which states perform relatively better, the quarantines do appear to coincide with the beginning of the decline in growth for each state/country, as seen in the Percent Growth graphs.
+
+#### How fast is COVID-19 spread globally?
+On the subject of global growth, the daily percent rate of growth in all of the countries with the highest amount of cases is slowly subsiding. Each country has their own timeframe, however, and both their peak growth rates and current, slow growth rates differ depending on the country, although they all mimic a similar pattern.
+
 ### 3rd introduction paragraph: summary + reflections, answer questions/goals
 
 
@@ -81,8 +94,15 @@ nrow(estimated_ages)/nrow(fives_ages)
 
 To see if this assumption is true, I took a deeper look into the uncleaned dataset, particularly at the summary column and age column. Looking through the first dataframe above (a dataframe with only ages that end five): the summary contains a description of ages that end in five, but also estimates of ages such as "60s" or "30s". The second dataframe searches the summary to isolate the descriptions that contain these estimates of ages. Dividing the number of entries in the second dataframe from the number of entries in the first produces the third output: a ratio of approximately 0.79. Meaning, that these large spikes in the centers of 20s, 30s, 40s, etc. are caused by an approximation of individuals by the healthcare workers who produced the dataset.
 
+## Exploration of how fast is COVID-19 spreading globally
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+data_bigcountries = filter(data, `Country/Region`=="US" | `Country/Region`=="Spain" | `Country/Region`=="Italy" | `Country/Region`=="Germany" | `Country/Region`=="France" | `Country/Region`=="China" | `Country/Region`=="Iran" | `Country/Region`=="Korea, South")
+#unique(data_bigcountries$`Country/Region`)
+data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases)) %>% ggplot(aes(x = date, y = cases, color = `Country/Region`)) + geom_line() + ggtitle("Absolute cases across the major countries") + geom_point() + theme(axis.text.x = element_text(angle = 90))
+```
+
 # Results
-## How fast is the virus spreading by country?
+## How fast is the virus spreading by Country?
 ```{r, echo=TRUE}
 df <- filter(data, `Country/Region` == "US" | `Country/Region` == "Spain" | `Country/Region` == "Italy" | `Country/Region` == "France" | `Country/Region` == "Germany" | `Country/Region` == "Iran" | `Country/Region` == "United Kingdom" | `Country/Region` == "Turkey" | `Country/Region` == "Belgium" | `Country/Region` == "Russia" | `Country/Region` == "Brazil" | `Country/Region` == "Canada"  | `Country/Region` == "India")
 df <- filter(df, is.na(`Province/State`))
@@ -129,7 +149,7 @@ exact_ages
 
 Given my realization about the outliers in the data description portion of this project, I thought it would be best, for visualization purposes, to isolate the observations that contained estimated patient's ages and observations that contained the patient's exact ages. This produced the two graphs above. In both visualizations, we can see that, while symptomatic cases peak in the mid-50s and begin to taper off from 60 and above, there are far more cases of COVID-19 that result in death in these more elderly victims. 
 
-## When will the spread plateau? Will it?
+## When will the spread plateau?
 ```{r message=FALSE, warning=FALSE}
 modelData <- filter(select(data, -'Province/State'), `Country/Region`=="US")
 modelData <- select(modelData, -`Country/Region`,-Lat, -Long,-date)
@@ -155,7 +175,7 @@ ts(modelData2, start = c(2020, 115), end = c(2020, 206),
 
 In order to confirm our findings, we decided to search the internet. We found [this](https://www.weforum.org/agenda/2020/04/how-and-when-will-this-pandemic-end-we-asked-a-virologist/) article, written on April 06, which describes how the number of cases may increase until a point of saturation is reached. This article is consistent with our findings since the 'point of saturation' described in the article is somewhere between 40-50% of the population. Other sources, however, such as [this one by the New York Times](https://www.nytimes.com/interactive/2020/04/22/upshot/coronavirus-models.html), forecast a decrease in the number of deaths (and therefore cases) of the coronavirus within the next 30 days. 
 
-## Is the quarantine really working? And if so, by how much?
+## How effective is the quarantine, if at all?
 ```{r, echo=FALSE}
 ncsc_data = filter(us_data, Province_State == "South Carolina" | Province_State == "North Carolina")
 ncsc_data$date <- as.Date(ncsc_data$date , format = "%m/%d/%y")
@@ -201,13 +221,7 @@ It does appear that quarantining coincides with a low and steady decrease in cas
 
 ## How fast is COVID-19 spreading globally?
 
-```{r,echo=FALSE,message=FALSE,warning=FALSE}
-data_bigcountries = filter(data, `Country/Region`=="US" | `Country/Region`=="Spain" | `Country/Region`=="Italy" | `Country/Region`=="Germany" | `Country/Region`=="France" | `Country/Region`=="China" | `Country/Region`=="Iran" | `Country/Region`=="Korea, South")
-#unique(data_bigcountries$`Country/Region`)
-data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases)) %>% ggplot(aes(x = date, y = cases, color = `Country/Region`)) + geom_line() + ggtitle("Absolute cases across the major countries") + geom_point() + theme(axis.text.x = element_text(angle = 90))
-```
-
-It's pretty obvious to look at the absolute numbers and conclude that the western countries are the main growth contributors, whereas China and South Korea have slowed down incredibly (somewhat unbelievably for China, one might add). When comparing their rates of growth, which I do below, it's interesting to see that these countries plateau in growth around 30-50% growth during 1 day, and then make a fairly consistent drop down to a certain number, which for the US lies at around 8% currently and for Italy it's around 3%, while for China it's almost 0. For reference, Italy's nationwide lockdown occurred on March 9th, while many of the US's occurred in the 2 weeks following March 15th. Again, it does appear that the quarantine and the start of a decrease in growth occur around the same time in each case.
+It's pretty obvious to look at the absolute numbers in the data description section above and conclude that the western countries are the main growth contributors, whereas China and South Korea have slowed down incredibly (somewhat unbelievably for China, one might add). When comparing their rates of growth, which I do below, it's interesting to see that these countries plateau in growth around 30-50% growth during 1 day, and then make a fairly consistent drop down to a certain number, which for the US lies at around 8% currently and for Italy it's around 3%, while for China it's almost 0. For reference, Italy's nationwide lockdown occurred on March 9th, while many of the US's occurred in the 2 weeks following March 15th. Again, it does appear that the quarantine and the start of a decrease in growth occur around the same time in each case.
 
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 data_bcgrowth = data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases))
