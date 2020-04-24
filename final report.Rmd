@@ -34,7 +34,8 @@ In terms of the effectiveness of the quarantine, it's difficult to measure witho
 On the subject of global growth, the daily percent rate of growth in all of the countries with the highest amount of cases is slowly subsiding. Each country has their own timeframe, however, and both their peak growth rates and current, slow growth rates differ depending on the country, although they all mimic a similar pattern.
 
 ## Reflection
-# insert here
+Overall, what we discovered investigating COVID-19 reconfirms the extreme measures taken by the government to slow it. On the positive end of the spectrum, we found fatality rates, even in the worst of cases, not to be enormously high. Additionally, although we cannot quantify the amount that the quarantine has helped, it seems to coincide with the slowing of COVID-19 growth rates. We also found the global spread to be slowly decreasing, which yet again points to a potential end to the stay-at-home measures. However, when trying to predict what the next few months will bring, we find no immediate plateau or ending of the pandemic in sight. Our model does not take into account, however, how continuation of social distancing measures may affect the spread of the coronavirus, as week-by-week fewer and fewer people are leaving for nonessential tasks. This was a difficulty we faced when constructing the model. 
+
 
 
 # Data Description:
