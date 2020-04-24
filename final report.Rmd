@@ -22,10 +22,10 @@ Two of the datasets chosen for the project are taken from the Center for Systems
 
 ## Summary of responses
 #### How do different groups fare after testing positive for COVID-19?
-Our research has shown that males are more likely to be effected by the disease, and their chances of recovery are lesser than their female counterparts. Additionally, our exploration has shown that while there are more cases of middle-aged individuals contracting COVID-19, their chances of recovery are much higher than individuals who are older than approximately 65.
+Our research has shown that males are more likely to be affected by the disease, and their chances of recovery are lesser than their female counterparts. Additionally, our exploration has shown that while there are more cases of middle-aged individuals contracting COVID-19, their chances of recovery are much higher than individuals who are older than approximately 65.
 
 #### When will the spread plateau?
-When trying to find out if the pandemic was on the verge of plateau, we decided to forecast the next ninety-two days of cases in the United States. What we found was that the number of cases is predicted to increase to 3.5 million during that time. At least in the short term, Covid-19 is here to stay (in the United States). 
+When trying to find out if the pandemic was on the verge of plateau, we decided to forecast the next ninety-two days of cases in the United States. What we found was that the number of cases is predicted to increase to 3.5 million during that time. At least in the short term, COVID-19 is here to stay (in the United States). 
 
 #### How effective is the quarantine?
 In terms of the effectiveness of the quarantine, it's difficult to measure without a control group, which isn't possible in such a high-stakes scenario. While the date of the quarantine by state doesn't appear to have an obvious effect on which states perform relatively better, the quarantines do appear to coincide with the beginning of the decline in growth for each state/country, as seen in the Percent Growth graphs.
@@ -33,7 +33,8 @@ In terms of the effectiveness of the quarantine, it's difficult to measure witho
 #### How fast is COVID-19 spread globally?
 On the subject of global growth, the daily percent rate of growth in all of the countries with the highest amount of cases is slowly subsiding. Each country has their own timeframe, however, and both their peak growth rates and current, slow growth rates differ depending on the country, although they all mimic a similar pattern.
 
-### 3rd introduction paragraph: summary + reflections, answer questions/goals
+## Reflection
+# insert here
 
 
 # Data Description:
