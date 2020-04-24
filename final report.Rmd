@@ -77,7 +77,7 @@ ages_patient_data <- read_csv("https://raw.githubusercontent.com/Mardiff/STOR-32
 colnames(ages_patient_data) <- c("id", "case_in_country", "reporting date", "summary", "location", "country", "gender", "age", "syptom_onset", "if_onset_approximated", "hosp_visit_date", "international_traveler", "domestic_traveler", "exposure_start", "exposure_end", "traveler", "visiting_wuhan","from_wuhan","death","recovered","symptom","source","link")
 ages_patient_data <- filter(ages_patient_data, !is.na(ages_patient_data$death) | !is.na(ages_patient_data$recovered))
 ages_patient_data$outcome <- ifelse(ages_patient_data$death == 0 | is.na(ages_patient_data$death) , "recovered", "dead")
-ages_patient_data <- select(ages_patient_data, summary, age, outcome)
+ages_patient_data <- select(ages_patient_data, summary, country, age, outcome)
 
 fives_ages <- filter(ages_patient_data, age == 15 | age == 25 | age == 35 | age == 45 | age == 55 | age == 65 | age == 75 | age == 85 | age == 95)
 estimated_ages <- filter(fives_ages, grepl('.*(0s).*', summary))
@@ -122,6 +122,10 @@ fpie
 
 From the above graphics we can see that presumably more men than women show symptoms after contracting COVID-19 as the number of male cases is larger than the number of female cases. Which, seems to be supported by studies of hospitalized individuals in the US [The New Coronavirus Appears to Take a Greater Toll on Men Than On Women.](https://www.npr.org/sections/goatsandsoda/2020/04/10/831883664/the-new-coronavirus-appears-to-take-a-greater-toll-on-men-than-on-women)
 Also noticable in the above graphics, is the larger proportion of deaths in males resulting from COVID-19 than in females.
+
+```{r, echo=TRUE}
+
+```
 
 ## When will the spread plateau? Will it?
 ```{r message=FALSE, warning=FALSE}
