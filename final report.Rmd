@@ -73,11 +73,13 @@ The first, while we hear that the elderly are much more likely to contract COVID
 The second, are the large spikes in the centers of the 20s, 30s, 40s, etc. We expect this is due to an approximation of individuals with unknown ages.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-fives_ages <- read_csv("https://raw.githubusercontent.com/Mardiff/STOR-320-Coronavirus-Project/master/Kudos%20to%20DXY.cn%20Last%20update_%2003_13_2020%2C%20%208_00%20PM%20(EST)%20-%20Line-list.csv") %>%
-  select(X4, X8) %>%
-  filter(X8 == 15 | X8 == 25 | X8 == 35 | X8 == 45 | X8 == 55 | X8 == 65 | X8 == 75 | X8 == 85 | X8 == 95) %>%
-  rename("summary" = X4, "ages" = X8)
+ages_patient_data <- read_csv("https://raw.githubusercontent.com/Mardiff/STOR-320-Coronavirus-Project/master/Kudos%20to%20DXY.cn%20Last%20update_%2003_13_2020%2C%20%208_00%20PM%20(EST)%20-%20Line-list.csv")
+colnames(ages_patient_data) <- c("id", "case_in_country", "reporting date", "summary", "location", "country", "gender", "age", "syptom_onset", "if_onset_approximated", "hosp_visit_date", "international_traveler", "domestic_traveler", "exposure_start", "exposure_end", "traveler", "visiting_wuhan","from_wuhan","death","recovered","symptom","source","link")
+ages_patient_data <- filter(ages_patient_data, !is.na(ages_patient_data$death) | !is.na(ages_patient_data$recovered))
+ages_patient_data$outcome <- ifelse(ages_patient_data$death == 0 | is.na(ages_patient_data$death) , "recovered", "dead")
+ages_patient_data <- select(ages_patient_data, summary, age, outcome)
 
+fives_ages <- filter(ages_patient_data, age == 15 | age == 25 | age == 35 | age == 45 | age == 55 | age == 65 | age == 75 | age == 85 | age == 95)
 estimated_ages <- filter(fives_ages, grepl('.*(0s).*', summary))
 
 head(fives_ages, 20)
@@ -85,7 +87,7 @@ head(estimated_ages, 20)
 nrow(estimated_ages)/nrow(fives_ages)
 ```
 
-To see if this is truly the case, I took a deeper look into the uncleaned dataset, particularly at the summary column and age column. Looking through the first dataframe above (a dataframe with only ages that end five) : the summary contains a description of ages that end in five, but also estimates of ages such as "60s" or "30s". The second dataframe searches the summary to isolate the descriptions that contain these estimates of ages. Dividing the number of entries in the second dataframe from the number of entries in teh first produces the third output: a ratio of approximately 0.85. Meaning, that these large spikes in the centers of 20s, 30s, 40s, etc. are in fact caused by an approximation of individuals by the healthcare workers who produced the dataset.
+To see if this is truly the case, I took a deeper look into the uncleaned dataset, particularly at the summary column and age column. Looking through the first dataframe above (a dataframe with only ages that end five) : the summary contains a description of ages that end in five, but also estimates of ages such as "60s" or "30s". The second dataframe searches the summary to isolate the descriptions that contain these estimates of ages. Dividing the number of entries in the second dataframe from the number of entries in teh first produces the third output: a ratio of approximately 0.79. Meaning, that these large spikes in the centers of 20s, 30s, 40s, etc. are in fact caused by an approximation of individuals by the healthcare workers who produced the dataset.
 
 # Results
 ## How fast is the virus spreading by country?
