@@ -1,0 +1,129 @@
+---
+title: "Final Report"
+output: html_document
+---
+
+```{r message=FALSE, warning=FALSE}
+# Packages used:
+library(readr)
+library(tidyverse)
+
+# Data used:
+data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+data
+patient_data <- read_csv("https://raw.githubusercontent.com/Mardiff/STOR-320-Coronavirus-Project/master/Kudos%20to%20DXY.cn%20Last%20update_%2003_13_2020%2C%20%208_00%20PM%20(EST)%20-%20Line-list.csv")
+us_data = read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
+```
+
+# Introduction:
+
+The Coronavirus pandemic began in late 2019 in China and quickly escalated in recent months to becoming the cause of hundreds of thousands of illnesses and deaths on a global scale. The overarching purpose of our project is to explore the many implications that COVID-19 has had on the world, and to identify any trends that appear in our data that could explain previous characteristics of the virus and its spread or even model how the virus may act in the future. OUr goals were namely to analyze how quickly the virus has spread on a gloabl scale as well as by nation, how different groups of people have fared after becoming infected, and to investigate the effects of quarantine measures on the infection rate of COVID-19.
+
+Two of the datasets chosen for the project are taken from the Center for Systems Science and Engineering (CSSE) at Johns Hopskins University. They contain daily updated timeseries table consisting of the confirmed cases, recovered cases, and deaths by location, with the first dataset containing global data while the second dataset contains data for the different regions of the United States. The remaining dataset of the three orignates from DXY.cn, an online community for those working in the healhcare field in China. This dataset contained data pertaining to patient outcomes, such as age and gender. We cleaned the datasets appropriately in order to complete our goals; we used observations from country/region, age, and gender variables and compared them against deaths and recoveries to do this. 
+
+### 3rd introduction paragraph: summary + reflections, answer questions/goals
+
+
+# Data Description:
+```{r message=FALSE, warning=FALSE}
+# Cleaning
+data <- pivot_longer(data, 5:82, names_to = "date", values_to = "cases")
+data$date <- as.Date(data$date , format = "%m/%d/%y")
+
+colnames(patient_data) <- c("id", "case_in_country", "reporting date", "summary", "location", "country", "gender", "age", "syptom_onset", "if_onset_approximated", "hosp_visit_date", "international_traveler", "domestic_traveler", "exposure_start", "exposure_end", "traveler", "visiting_wuhan","from_wuhan","death","recovered","symptom","source","link")
+
+patient_data <- patient_data[-1,]
+# What happened to them? We don't know.
+patient_data <- patient_data %>% filter(!is.na(patient_data$death) | !is.na(patient_data$recovered))
+
+# unique(patient_data$death)
+patient_data$outcome <- ifelse(patient_data$death == 0 | is.na(patient_data$death) , "recovered", "dead")
+
+patient_data <- select(patient_data, country, gender, age, outcome)
+
+us_data = select(us_data, -c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Lat", "Long_", "Combined_Key", "Country_Region"))
+
+us_data <- pivot_longer(us_data, 2:80, names_to = "date", values_to = "cases") %>% group_by(Province_State, date) %>% summarize(cases = sum(cases)) %>% filter(Province_State != "American Samoa" && Province_State != "Diamond Princess"  && Province_State != "Grand Princess"  && Province_State != "Guam" && Province_State != "Northern Mariana Islands" && Province_State != "Puerto Rico" && Province_State != "Virgin Islands")
+
+```
+
+The above code was used to clean both of the datasets.
+
+For the CSSE dataset, there were some ambiguities in terms of State/Province, as some smaller countries only had reports of every case in the country rather than by individual province/state entries as well. Additionally, there was some redundant data (like longitude and latitude), but this was kept in the data set for geographical distinction and potential map visuals down the line. Overall, the key variables we used from this dataset were the country/region variable, along with the death counts for each day. The more difficult data to clean was the patient data.
+
+The patient data was a compilation by medical staff, and so there wasn't a set manner by which data was included. Thankfully, some columns such as gender and age were included, which did not require massive amounts of cleaning. However, our goal was to work with the outcomes of patients which proved to be messy. In some cases, the death/recovered columns were both empty, amongst other minor issues (1s and 0s at times, dates at others). To remedy this, a separate outcome column was created and only gender, age, and country variables were kept. We felt the other columns were unnecessary and more often than not incomplete.
+
+The three dataframes below are the CSSE dataset for cases on a global scale, the CSSE dataset for the United States alone, and the DXY.cn dataset of cases focussing on patient characterstics, in that order.
+
+```{r echo=FALSE}
+head(data)
+head(us_data)
+head(patient_data)
+```
+
+## Exploration of how different groups fair after contracting COVID-19
+```{r, echo=FALSE}
+age <- filter(patient_data, !is.na(age)) %>% select(age, outcome) %>% group_by(outcome) %>% ggplot(aes(x=age,fill=outcome)) + geom_bar(stat="count") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(breaks=c(10,20,30,40,50,60,70,80,90,110)) + ggtitle("Deaths and recoveries by age")
+age
+```
+
+There are two features that stick out about the above graph:
+The first, while we hear that the elderly are much more likely to contract COVID-19 and face harsher symptoms of the disease, the data above does not seem to reflect that individuals over the age of 70 are more likely to contract. This could be due to a couple of different reasons: a potential lower population of those over the age of 70 or the fact that multiple countries healthcare systems were overwhelmed by the number of cases meaning healthcare professionals were forced to triage the hospitalized by likeliness of survival.
+The second, are the large spikes in the centers of the 20s, 30s, 40s, etc. We expect this is due to an approximation of individuals with unknown ages.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+fives_ages <- read_csv("https://raw.githubusercontent.com/Mardiff/STOR-320-Coronavirus-Project/master/Kudos%20to%20DXY.cn%20Last%20update_%2003_13_2020%2C%20%208_00%20PM%20(EST)%20-%20Line-list.csv") %>%
+  select(X4, X8) %>%
+  filter(X8 == 15 | X8 == 25 | X8 == 35 | X8 == 45 | X8 == 55 | X8 == 65 | X8 == 75 | X8 == 85 | X8 == 95) %>%
+  rename("summary" = X4, "ages" = X8)
+
+estimated_ages <- filter(fives_ages, grepl('.*(0s).*', summary))
+
+head(fives_ages, 20)
+head(estimated_ages, 20)
+nrow(estimated_ages)/nrow(fives_ages)
+```
+
+To see if this is truly the case, I took a deeper look into the uncleaned dataset, particularly at the summary column and age column. Looking through the first dataframe above (a dataframe with only ages that end five) : the summary contains a description of ages that end in five, but also estimates of ages such as "60s" or "30s". The second dataframe searches the summary to isolate the descriptions that contain these estimates of ages. Dividing the number of entries in the second dataframe from the number of entries in teh first produces the third output: a ratio of approximately 0.85. Meaning, that these large spikes in the centers of 20s, 30s, 40s, etc. are in fact caused by an approximation of individuals by the healthcare workers who produced the dataset.
+
+# Results
+## How fast is the virus spreading by country?
+```{r, echo=TRUE}
+df <- filter(data, `Country/Region` == "US" | `Country/Region` == "Spain" | `Country/Region` == "Italy" | `Country/Region` == "France" | `Country/Region` == "Germany" | `Country/Region` == "Iran" | `Country/Region` == "United Kingdom" | `Country/Region` == "Turkey" | `Country/Region` == "Belgium" | `Country/Region` == "Russia" | `Country/Region` == "Brazil" | `Country/Region` == "Canada"  | `Country/Region` == "India")
+df <- filter(df, is.na(`Province/State`))
+ggplot(df, aes(x=date, y=cases, color=`Country/Region`)) +
+  geom_line() + ggtitle("Cases over time by Country")
+```
+
+As we can see, the US has the highest number of cases to date, as well as one of the steepest curves. While most nearly all other countries shown in the graph began seeing their first cases in the beginning of March, the US had their first case approximately two weeks later. The graph below shows the cases in several countries after the US' first major spike in cases.
+
+```{r, echo=TRUE}
+df <- filter(df, date >= "2020-3-15")
+ggplot(df, aes(x=date, y=cases, color=`Country/Region`)) +
+  geom_line() + ggtitle("Cases over time by Country from mid-March")
+```
+
+## How do different groups fare after testing positive for COVID-19?
+```{r, echo=TRUE}
+gender <- filter(patient_data, !is.na(gender)) %>%
+  select(gender, outcome)
+male <- gender[gender$gender == "male",] %>% group_by(outcome) %>%
+  summarise(cases = n())
+female <- gender[gender$gender == "female",] %>% group_by(outcome) %>%
+  summarise(cases = n())
+mpie <- ggplot(male, aes(x="",y=cases,fill=outcome)) + geom_bar(stat ="identity", width=1) + ggtitle("Male deaths and recoveries") + coord_polar("y", start=0)
+fpie <- ggplot(female, aes(x="",y=cases,fill=outcome)) + geom_bar(stat ="identity", width=1) + ggtitle("Female deaths and recoveries") + coord_polar("y", start=0)
+mpie
+fpie
+```
+
+From the above graphics we can see that presumably more men than women show symptoms after contracting COVID-19 as the number of male cases is larger than the number of female cases. Which, seems to be supported by studies of hospitalized individuals in the US [The New Coronavirus Appears to Take a Greater Toll on Men Than On Women.](https://www.npr.org/sections/goatsandsoda/2020/04/10/831883664/the-new-coronavirus-appears-to-take-a-greater-toll-on-men-than-on-women)
+Also noticable in the above graphics, is the larger proportion of deaths in males resulting from COVID-19 than in females.
+
+## When will the spread plateau? Will it?
+```{r}
+populationDen <- read_csv("density.csv")
+
+populationDen 
+```
+
