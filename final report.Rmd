@@ -150,19 +150,21 @@ In order to confirm our findings, we decided to search the internet. We found [t
 
 
 ## "Is the quarantine really working? And if so, by how much?"
-```{r, echo=False}
+```{r, echo=FALSE}
 ncsc_data = filter(us_data, Province_State == "South Carolina" | Province_State == "North Carolina")
 
 ncsc_data$date <- as.Date(ncsc_data$date , format = "%m/%d/%y")
 ggplot(ncsc_data, aes(x = date, y = cases, color = Province_State)) + geom_line() + ggtitle("Growth in North Carolina and South Carolina") + geom_point() + theme(axis.text.x = element_text(angle = 90))
 
 ```
+
 North Carolina enacted a stay at home policy a week before South Carolina (March 30th vs April 7th), and because of their proximity and similarity it seemed like a good case to dive into. However, from what it looks like here, there really isn't a significant difference between the overall numbers or the perceived growth in the two regions. In fact, if we're really nitpicking, it appears that North Carolina has maintained a linear growth percentage while South Carolina's has somewhat tailed off in the recent weeks. In order to see if quarantine has had a noticeable benefit, we'll have to push further.
 
 The first thing we'll look at is the difference between what rank (1-51, including DC) they number of cases was on the day each state ordered their stay-at-home order and the last day we have data, 4/23, and compare that to the day they ordered it. For cleanliness, states that did not order a statewide stay-at-home order have been removed. A simplified dataset that has been created manually in order to pull in the stay-at-home dates has been added.
 
 For reference, the more positive a rank, the more the cases decreased in that state relative to other states.
-```{r,echo=False,message=False,warning=False}
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
 us_data_sah = read_csv("us_data_sah_normed.csv")
 us_data_sah$date <- as.Date(us_data_sah$date , format = "%m/%d/%y")
 
@@ -174,7 +176,7 @@ ggplot(us_data_sah2, aes(x = date, y = rank_difference, label = Province_State))
 
 Interestingly, there doesn't appear to be an overarching trend relating the date of the stay-at-home order effects when compared to how the national ranking of each state's cases changed. Let's look when comparing their normalized ranks. Again, a positive rank_difference indicates that this state's cases decreased relative to other states.
 
-```{r,echo=False,message=False,warning=False}
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
 us_data_sah2$norm_rank_difference = us_data_sah2$normalized_rank_latest - us_data_sah2$normalized_rank_on_sah
 
 ggplot(us_data_sah2, aes(x = date, y = norm_rank_difference, label = Province_State)) + ggtitle("Difference in normalized rank based on the Stay At Home order date") + geom_point() + theme(axis.text.x = element_text(angle = 90)) + geom_text(nudge_y = +0.8, size = 3.5)
@@ -184,7 +186,7 @@ There are more states above 0 than below 0, which indicates that states are more
 
 If we instead  wanted to look at the rate of growth of each state before and after quarantining, one way would be to isolate the dates around each quarantine date. If we look at the preceeding 2 weeks and the succeedings two weeks of a select few states, the data appears as so:
 
-```{r,echo=False,message=False,warning=False}
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
 us_data_sah3 = filter(us_data_sah, !is.na(days_after_quarantine))
 us_data_sah3$date <- as.Date(us_data_sah3$date , format = "%m/%d/%y")
 
@@ -203,16 +205,18 @@ It does appear that quarantining coincides with a low and steady decrease in cas
 # 
 
 How fast is COVID-19 spreading globally?
-```{r,echo=False,message=False,warning=False}
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
 data_bigcountries = filter(data, `Country/Region`=="US" | `Country/Region`=="Spain" | `Country/Region`=="Italy" | `Country/Region`=="Germany" | `Country/Region`=="France" | `Country/Region`=="China" | `Country/Region`=="Iran" | `Country/Region`=="Korea, South")
 
 #unique(data_bigcountries$`Country/Region`)
 
 data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases)) %>% ggplot(aes(x = date, y = cases, color = `Country/Region`)) + geom_line() + ggtitle("Absolute cases across the major countries") + geom_point() + theme(axis.text.x = element_text(angle = 90))
 ```
+
 It's pretty obvious to look at the absolute numbers and conclude that the western countries are the main growth contributors, whereas China and South Korea have slowed down incredibly (somewhat unbelievably for China, one might add). When comparing their rates of growth, which I do below, it's interesting to see that these countries plateau in growth around 30-50% growth during 1 day, and then make a fairly consistent drop down to a certain number, which for the US lies at around 8% currently and for Italy it's around 3%, while for China it's almost 0. For reference, Italy's nationwide lockdown occured on March 9th, while many of the US's occured in the 2 weeks following March 15th. Again, it does appear that the quarantine and the start of a decrease in growth occur around the same time in each case.
 
-```{r,echo=False,message=False,warning=False}
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
 data_bcgrowth = data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases))
 
 data_bcgrowth = data_bcgrowth %>% mutate(Diff_year = 1,  # Difference in time (just in case there are gaps)
