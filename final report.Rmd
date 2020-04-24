@@ -146,6 +146,13 @@ fore_arima
 
 As per Professor Brown's suggestion, we decided to use a time series regression model to forecast the number of cases in the US. We wanted to find out when/if the spread would plateau, and in order to answer the question, we decided to forecast the next 92 days of the cases in the US, using the ARIMA modeling method. Unfortunately, what we see is an increase in cases rather than any decrease whatsoever, based on current trends. Our model forecasts that in 92 days, there will be over 3.5 million infected. 
 
+```{r}
+modelData2 <- as.data.frame(fore_arima$mean) %>% rename(cases=x)
+ts(modelData2, start = c(2020, 115), end = c(2020, 206),
+           frequency = 365) %>% plot()
+```
+
+
 In order to confirm our findings, we decided to search the internet. We found [this](https://www.weforum.org/agenda/2020/04/how-and-when-will-this-pandemic-end-we-asked-a-virologist/) article, written on April 06, which describes how the number of cases may increase until a point of saturation is reached. This article is consistent with our findings since the 'point of saturation' described in the article is somewhere between 40-50% of the population. Other sources, however, such as [this one by the New York Times](https://www.nytimes.com/interactive/2020/04/22/upshot/coronavirus-models.html), forecast a decrease in the number of deaths (and therefore cases) of the coronavirus within the next 30 days. 
 
 ## Is the quarantine really working? And if so, by how much?
