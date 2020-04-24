@@ -11,7 +11,6 @@ library(forecast)
 
 # Data used:
 data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
-data
 patient_data <- read_csv("https://raw.githubusercontent.com/Mardiff/STOR-320-Coronavirus-Project/master/Kudos%20to%20DXY.cn%20Last%20update_%2003_13_2020%2C%20%208_00%20PM%20(EST)%20-%20Line-list.csv")
 us_data = read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 ```
@@ -28,7 +27,7 @@ Two of the datasets chosen for the project are taken from the Center for Systems
 # Data Description:
 ```{r message=FALSE, warning=FALSE}
 # Cleaning
-data <- pivot_longer(data, 5:97, names_to = "date", values_to = "cases")
+data <- pivot_longer(data, 5:ncol(data), names_to = "date", values_to = "cases")
 data$date <- as.Date(data$date , format = "%m/%d/%y")
 
 colnames(patient_data) <- c("id", "case_in_country", "reporting date", "summary", "location", "country", "gender", "age", "syptom_onset", "if_onset_approximated", "hosp_visit_date", "international_traveler", "domestic_traveler", "exposure_start", "exposure_end", "traveler", "visiting_wuhan","from_wuhan","death","recovered","symptom","source","link")
@@ -44,7 +43,7 @@ patient_data <- select(patient_data, country, gender, age, outcome)
 
 us_data = select(us_data, -c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Lat", "Long_", "Combined_Key", "Country_Region"))
 
-us_data <- pivot_longer(us_data, 2:80, names_to = "date", values_to = "cases") %>% group_by(Province_State, date) %>% summarize(cases = sum(cases)) %>% filter(Province_State != "American Samoa" && Province_State != "Diamond Princess"  && Province_State != "Grand Princess"  && Province_State != "Guam" && Province_State != "Northern Mariana Islands" && Province_State != "Puerto Rico" && Province_State != "Virgin Islands")
+us_data <- pivot_longer(us_data, 2:ncol(us_data), names_to = "date", values_to = "cases") %>% group_by(Province_State, date) %>% summarize(cases = sum(cases)) %>% filter(Province_State != "American Samoa" && Province_State != "Diamond Princess"  && Province_State != "Grand Princess"  && Province_State != "Guam" && Province_State != "Northern Mariana Islands" && Province_State != "Puerto Rico" && Province_State != "Virgin Islands")
 
 ```
 
@@ -62,7 +61,7 @@ head(us_data)
 head(patient_data)
 ```
 
-## Exploration of how different groups fair after contracting COVID-19
+## Exploration of how different groups fare after contracting COVID-19
 ```{r, echo=FALSE}
 age <- filter(patient_data, !is.na(age)) %>% select(age, outcome) %>% group_by(outcome) %>% ggplot(aes(x=age,fill=outcome)) + geom_bar(stat="count") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(breaks=c(10,20,30,40,50,60,70,80,90,110)) + ggtitle("Deaths and recoveries by age")
 age
@@ -123,6 +122,7 @@ fpie
 From the above graphics we can see that presumably more men than women show symptoms after contracting COVID-19 as the number of male cases is larger than the number of female cases. Which, seems to be supported by studies of hospitalized individuals in the US [The New Coronavirus Appears to Take a Greater Toll on Men Than On Women.](https://www.npr.org/sections/goatsandsoda/2020/04/10/831883664/the-new-coronavirus-appears-to-take-a-greater-toll-on-men-than-on-women)
 Also noticable in the above graphics, is the larger proportion of deaths in males resulting from COVID-19 than in females.
 
+
 ## When will the spread plateau? Will it?
 ```{r message=FALSE, warning=FALSE}
 modelData <- filter(select(data, -'Province/State'), `Country/Region`=="US")
@@ -147,3 +147,77 @@ As per professor Brown's suggestion, we decided to use a time series regression 
 In order to confirm our findings, we decided to search the internet. We found [this](https://www.weforum.org/agenda/2020/04/how-and-when-will-this-pandemic-end-we-asked-a-virologist/) article, written on April 06, which describes how the number of cases may increase until a point of saturation is reached. This article is consistent with our findings, since the 'point of saturation' described in the article is somewhere between 40-50% of the population. Other sources, however, such as [this one by the New York Times](https://www.nytimes.com/interactive/2020/04/22/upshot/coronavirus-models.html), forecast a decrease in the number of deaths (and therefore cases) of the coronavirus within the next 30 days. 
 
 
+
+
+## "Is the quarantine really working? And if so, by how much?"
+```{r, echo=False}
+ncsc_data = filter(us_data, Province_State == "South Carolina" | Province_State == "North Carolina")
+
+ncsc_data$date <- as.Date(ncsc_data$date , format = "%m/%d/%y")
+ggplot(ncsc_data, aes(x = date, y = cases, color = Province_State)) + geom_line() + ggtitle("Growth in North Carolina and South Carolina") + geom_point() + theme(axis.text.x = element_text(angle = 90))
+
+```
+North Carolina enacted a stay at home policy a week before South Carolina (March 30th vs April 7th), and because of their proximity and similarity it seemed like a good case to dive into. However, from what it looks like here, there really isn't a significant difference between the overall numbers or the perceived growth in the two regions. In fact, if we're really nitpicking, it appears that North Carolina has maintained a linear growth percentage while South Carolina's has somewhat tailed off in the recent weeks. In order to see if quarantine has had a noticeable benefit, we'll have to push further.
+
+The first thing we'll look at is the difference between what rank (1-51, including DC) they number of cases was on the day each state ordered their stay-at-home order and the last day we have data, 4/23, and compare that to the day they ordered it. For cleanliness, states that did not order a statewide stay-at-home order have been removed. A simplified dataset that has been created manually in order to pull in the stay-at-home dates has been added.
+
+For reference, the more positive a rank, the more the cases decreased in that state relative to other states.
+```{r,echo=False,message=False,warning=False}
+us_data_sah = read_csv("us_data_sah_normed.csv")
+us_data_sah$date <- as.Date(us_data_sah$date , format = "%m/%d/%y")
+
+us_data_sah2 = filter(us_data_sah, days_after_quarantine == 0) %>% select(Province_State, date, rank_on_sah, rank_latest, normalized_rank_on_sah, normalized_rank_latest, population, persons_per_misq) %>% distinct() %>% na.omit()
+us_data_sah2$rank_difference = us_data_sah2$rank_latest - us_data_sah2$rank_on_sah
+
+ggplot(us_data_sah2, aes(x = date, y = rank_difference, label = Province_State)) + ggtitle("Difference in rank from latest day to 4/23 based on the Stay At Home order date") + geom_point() + theme(axis.text.x = element_text(angle = 90)) + geom_text(nudge_y = +0.8, size = 3.5)
+```
+
+Interestingly, there doesn't appear to be an overarching trend relating the date of the stay-at-home order effects when compared to how the national ranking of each state's cases changed. Let's look when comparing their normalized ranks. Again, a positive rank_difference indicates that this state's cases decreased relative to other states.
+
+```{r,echo=False,message=False,warning=False}
+us_data_sah2$norm_rank_difference = us_data_sah2$normalized_rank_latest - us_data_sah2$normalized_rank_on_sah
+
+ggplot(us_data_sah2, aes(x = date, y = norm_rank_difference, label = Province_State)) + ggtitle("Difference in normalized rank based on the Stay At Home order date") + geom_point() + theme(axis.text.x = element_text(angle = 90)) + geom_text(nudge_y = +0.8, size = 3.5)
+```
+
+There are more states above 0 than below 0, which indicates that states are more likely to go down in the rankings (have less cases relative to others) after they quarantine, which makes sense. However, it's not entirely conclusive, which can likely be drawn up to the fact A) that so many states quarantined at about the same time and B) there are a lot of factors outside of just the quarantine date, like simply the rate and stage of growth of surrounding states (the later a Northeastern state quarantined, the lower it is on the graph) as well as unpredictability of who gets tested.
+
+If we instead  wanted to look at the rate of growth of each state before and after quarantining, one way would be to isolate the dates around each quarantine date. If we look at the preceeding 2 weeks and the succeedings two weeks of a select few states, the data appears as so:
+
+```{r,echo=False,message=False,warning=False}
+us_data_sah3 = filter(us_data_sah, !is.na(days_after_quarantine))
+us_data_sah3$date <- as.Date(us_data_sah3$date , format = "%m/%d/%y")
+
+us_data_sah3 = us_data_sah3[order(us_data_sah3$Province_State, us_data_sah3$days_after_quarantine),]
+
+us_data_sah3 = us_data_sah3 %>%mutate(Diff_year = 1,  # Difference in time (just in case there are gaps)
+         Diff_growth = cases - lag(cases), # Difference in route between years
+         Rate_percent = (Diff_growth / Diff_year)/cases * 100) %>% filter(cases > 0 & days_after_quarantine > -14 & (Province_State == "New York" | Province_State == "Washington" | Province_State == "North Carolina"))
+
+
+ggplot(us_data_sah3, aes(x = days_after_quarantine, y = Rate_percent, color = Province_State)) + geom_line() + ggtitle("Percent Growth by day before and after quarantining")
+```
+
+It does appear that quarantining coincides with a low and steady decrease in cases. Whether that's caused by the quarantining or the natural spread of the virus, we don't know, but what we do know is that it doesn't appear that quarantine is hurting whatsoever, and thus in a problem with such high stakes it'd be silly to move away from something that appears to be having at least something of a positive influence.
+
+# 
+
+How fast is COVID-19 spreading globally?
+```{r,echo=False,message=False,warning=False}
+data_bigcountries = filter(data, `Country/Region`=="US" | `Country/Region`=="Spain" | `Country/Region`=="Italy" | `Country/Region`=="Germany" | `Country/Region`=="France" | `Country/Region`=="China" | `Country/Region`=="Iran" | `Country/Region`=="Korea, South")
+
+#unique(data_bigcountries$`Country/Region`)
+
+data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases)) %>% ggplot(aes(x = date, y = cases, color = `Country/Region`)) + geom_line() + ggtitle("Absolute cases across the major countries") + geom_point() + theme(axis.text.x = element_text(angle = 90))
+```
+It's pretty obvious to look at the absolute numbers and conclude that the western countries are the main growth contributors, whereas China and South Korea have slowed down incredibly (somewhat unbelievably for China, one might add). When comparing their rates of growth, which I do below, it's interesting to see that these countries plateau in growth around 30-50% growth during 1 day, and then make a fairly consistent drop down to a certain number, which for the US lies at around 8% currently and for Italy it's around 3%, while for China it's almost 0. For reference, Italy's nationwide lockdown occured on March 9th, while many of the US's occured in the 2 weeks following March 15th. Again, it does appear that the quarantine and the start of a decrease in growth occur around the same time in each case.
+
+```{r,echo=False,message=False,warning=False}
+data_bcgrowth = data_bigcountries %>% group_by(`Country/Region`, date) %>% summarize(cases = sum(cases))
+
+data_bcgrowth = data_bcgrowth %>% mutate(Diff_year = 1,  # Difference in time (just in case there are gaps)
+         Diff_growth = cases - lag(cases), # Difference in route between years
+         Rate_percent = (Diff_growth / Diff_year)/cases * 100) 
+
+na.omit(data_bcgrowth) %>% filter(cases > 1000 & (`Country/Region` == "China" | `Country/Region` == "US" | `Country/Region` == "Italy")) %>% ggplot(aes(x = date, y = Rate_percent, color = `Country/Region`)) + geom_line() + ggtitle("Growth in cases across the major countries") + geom_point() + theme(axis.text.x = element_text(angle = 90))
+```
