@@ -4,37 +4,37 @@ output: html_document
 ---
 
 ```{r message=FALSE, warning=FALSE}
-#packages
+# Relevant packages
 library(readr)
 library(tidyverse)
 
-#Data used:
+# Data used:
 data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 patient_data <- read_csv("https://raw.githubusercontent.com/Mardiff/STOR-320-Coronavirus-Project/master/Kudos%20to%20DXY.cn%20Last%20update_%2003_13_2020%2C%20%208_00%20PM%20(EST)%20-%20Line-list.csv")
 us_data = read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 ```
 
-Introduction:
+# Introduction:
 
-Coronavirus is a pandemic that has recently been the cause of many deaths and illnesses across the globe. The purpose of this project was to explore the different implications COVID-19 has had on the world, and to see if if any trends appear in our data that could possibly model how the virus will act in the future. Our goals were namely to analyze how fast the virus has spread globally and by region, how different groups of people have fared after testing positive, and to investigate the effects of quarantine measures on the rate of infection of the virus, if any exist. 
+The Coronavirus pandemic began in late 2019 in China and quickly escalated in recent months to becoming the cause of hundreds of thousands of illnesses and deaths on a global scale. The overarching purpose of our project is to explore the many implications that COVID-19 has had on the world, and to identify any trends that appear in our data that could explain previous characteristics of the virus and its spread or even model how the virus may act in the future. OUr goals were namely to analyze how quickly the virus has spread on a gloabl scale as well as by nation, how different groups of people have fared after becoming infected, and to investigate the effects of quarantine measures on the infection rate of COVID-19.
 
-Two of the datasets chosen for this project come from the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University. They contain daily updated timeseries table consisting of the confirmed cases, recovered cases, and deaths by location, with the first dataset containing global data while the second dataset contains data for the different regions of the United States. The other dataset orignates from DXY.cn, an online community for those working in the healhcare field in China. This dataset contained data pertaining to patient outcomes, such as age and gender. We cleaned the datasets appropriately in order to complete our goals; we used observations from country/region, age, and gender variables and compared them against deaths and recoveries to do this. 
+Two of the datasets chosen for the project are taken from the Center for Systems Science and Engineering (CSSE) at Johns Hopskins University. They contain daily updated timeseries table consisting of the confirmed cases, recovered cases, and deaths by location, with the first dataset containing global data while the second dataset contains data for the different regions of the United States. The remaining dataset of the three orignates from DXY.cn, an online community for those working in the healhcare field in China. This dataset contained data pertaining to patient outcomes, such as age and gender. We cleaned the datasets appropriately in order to complete our goals; we used observations from country/region, age, and gender variables and compared them against deaths and recoveries to do this. 
 
-#3rd para: summary + reflections, answer questions/goals
+### 3rd introduction paragraph: summary + reflections, answer questions/goals
 
-Data Description:
+# Data Description:
 ```{r message=FALSE, warning=FALSE}
-#Cleaning
+# Cleaning
 data <- pivot_longer(data, 5:82, names_to = "date", values_to = "cases")
 data$date <- as.Date(data$date , format = "%m/%d/%y")
 
 colnames(patient_data) <- c("id", "case_in_country", "reporting date", "summary", "location", "country", "gender", "age", "syptom_onset", "if_onset_approximated", "hosp_visit_date", "international_traveler", "domestic_traveler", "exposure_start", "exposure_end", "traveler", "visiting_wuhan","from_wuhan","death","recovered","symptom","source","link")
 
 patient_data <- patient_data[-1,]
-#What happened to them? We don't know.
+# What happened to them? We don't know.
 patient_data <- patient_data %>% filter(!is.na(patient_data$death) | !is.na(patient_data$recovered))
 
-#unique(patient_data$death)
+# unique(patient_data$death)
 patient_data$outcome <- ifelse(patient_data$death == 0 | is.na(patient_data$death) , "recovered", "dead")
 
 patient_data <- select(patient_data, country, gender, age, outcome)
@@ -45,16 +45,17 @@ us_data <- pivot_longer(us_data, 2:80, names_to = "date", values_to = "cases") %
 
 ```
 
-The code above was used to clean both of the datasets.
+The above code was used to clean both of the datasets.
 
 For the CSSE dataset, there were some ambiguities in terms of State/Province, as some smaller countries only had reports of every case in the country rather than by individual province/state entries as well. Additionally, there was some redundant data (like longitude and latitude), but this was kept in the data set for geographical distinction and potential map visuals down the line. Overall, the key variables we used from this dataset were the country/region variable, along with the death counts for each day. The more difficult data to clean was the patient data.
 
-The patient data was a compilation by medical staff, and so there wasn't a set manner by which data was included. Thankfully, some columns such as gender and age were included, which didn't require massive amounts of cleaning. However, our goal was to work with the coutomes of patients which proved to be messy. In some cases, the death/recovered columns were both empty, amongst other minor issues (1s and 0s at times, dates at others). To remedy this, a separate outcome column was created and only gender, age, and country variables were kept. We felt the other columns were unnecessary and oftentimes incomplete.
+The patient data was a compilation by medical staff, and so there wasn't a set manner by which data was included. Thankfully, some columns such as gender and age were included, which did not require massive amounts of cleaning. However, our goal was to work with the outcomes of patients which proved to be messy. In some cases, the death/recovered columns were both empty, amongst other minor issues (1s and 0s at times, dates at others). To remedy this, a separate outcome column was created and only gender, age, and country variables were kept. We felt the other columns were unnecessary and more often than not incomplete.
 
 ```{r}
 head(data)
 head(patient_data)
-#Cases in the US Graph
+
+# Cases in the US Graph
 group_by(data, `Country/Region`) %>% filter(`Country/Region`=="US") %>% ggplot(aes(x = date, y = cases)) +
   geom_line() + ggtitle("Cases in the United States over time") + 
   geom_point() + theme(axis.text.x = element_text(angle = 90))
